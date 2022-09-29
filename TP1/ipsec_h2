@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# SPI1 : 0x571ed2bc
+# SPI2 : 0xfc180e7b
+# K1 : 0x05ea43e567dfec5aa65b431225a5a5e4a902a429bad4b605a2ecc195da49f198
+# k2 : 0x065712cc5795ef609fb472dc450741a65644e6ed3cd1e4197c42d98b25fdb5b6
+# k3 : 0x6638ca25492082dbb7d4f9a56a388b529e669b62b70aab73157774c5bdc282c8
+# k4 : 0x094e246b73b42117e0fffbefaa11632f52d6ef991004713625c315a9699761de
+# Rid1 : 0xeb8d367c
+# Rid2 : 0x61e0b84b
+# vider les bases SAD et SPD
+ip xfrm state flush
+ip xfrm policy flush 
+
+# 
+#ip xfrm state add src 10.10.10.1 dst  10.0.0.1 proto esp spi 0x571ed2bc reqid 0xeb8d367c mode tunnel auth sha256 0x05ea43e567dfec5aa65b431225a5a5e4a902a429bad4b605a2ecc195da49f198 enc aes 0x065712cc5795ef609fb472dc450741a65644e6ed3cd1e4197c42d98b25fdb5b6
+#ip xfrm state add src 10.0.0.1  dst 10.10.10.1 proto esp spi 0xfc180e7b reqid 0x61e0b84b mode tunnel  auth sha256 0x6638ca25492082dbb7d4f9a56a388b529e669b62b70aab73157774c5bdc282c8  enc aes 0x094e246b73b42117e0fffbefaa11632f52d6ef991004713625c315a9699761de
+
+
+# Security policies
+#ip xfrm policy add src 10.10.10.1  dst 10.0.0.1   dir out tmpl src 10.10.10.1 dst  10.0.0.1 proto esp reqid 0xeb8d367c mode tunnel
+#ip xfrm policy add src 10.0.0.1    dst 10.10.10.1 dir in tmpl src 10.0.0.1 dst  10.10.10.1 proto esp reqid 0x61e0b84b mode tunnel
+
+ip xfrm state add src 10.0.0.1 dst 10.10.10.1 proto esp spi 0x12345678 reqid 0x12345678 mode tunnel auth sha256 0x323730ed6f1b9ff0cb084af15b197e862b7c18424a7cdfb74cd385ae23bc4f17 enc "rfc3686(ctr(aes))" 0x27b90b8aec1ee32a8150a664e8faac761e2d305b
+ip xfrm state add src 10.10.10.1 dst 10.0.0.1 proto esp spi 0x12345678 reqid 0x12345678 mode tunnel  auth sha256 0x44d65c50b7581fd3c8169cf1fa0ebb24e0d55755b1dc43a98b539bb144f2067f  enc "rfc3686(ctr(aes))" 0x9df7983cb7c7eb2af01d88d36e462b5f01d10bc1
+
+
+# Security policies
+ip xfrm policy add src 10.10.10.1 dst 10.0.0.1 dir out tmpl src 10.10.10.1  dst 10.0.0.1 proto esp reqid 0x12345678 mode tunnel
+ip xfrm policy add src 10.0.0.1 dst 10.10.10.1 dir in tmpl src  10.0.0.1  dst 10.10.10.1  proto esp reqid 0x12345678 mode tunnel

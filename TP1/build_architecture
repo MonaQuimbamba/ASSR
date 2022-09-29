@@ -1,4 +1,5 @@
 #!/bin/bash
+#apt-get install openvswitch-switch
 
 # créer les namespaces pour les hôtes
 ip netns add h1
