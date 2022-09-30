@@ -1,0 +1,43 @@
+#!/bin/bash
+
+K=$(xxd -p -l 32 -c 32 /dev/urandom)
+K1="0x${K}"
+K=$(xxd -p -l 32 -c 32 /dev/urandom)
+K2="0x${K}"
+K=$(xxd -p -l 32 -c 32 /dev/urandom)
+K3="0x${K}"
+K4=$(xxd -p -l 32 -c 32 /dev/urandom)
+K4="0x${K}"
+
+Rid=$(xxd -p -l 4 -c 4 /dev/urandom)
+Rid1="0x${Rid}"
+Rid=$(xxd -p -l 4 -c 4 /dev/urandom)
+Rid2="0x${Rid}"
+
+SPI=$(xxd -p -l 4 -c 4 /dev/urandom)
+SPI1="0x${SPI}"
+SPI=$(xxd -p -l 4 -c 4 /dev/urandom)
+SPI2="0x${SPI}"
+
+# clean the databases  SAD & SPD
+
+ip netns exec h1 ip xfrm state flush
+ip netns exec h1 ip xfrm policy flush 
+
+ip netns exec h2 ip xfrm state flush
+ip netns exec h2 ip xfrm policy flush 
+
+#  AH SAs using 256 bit long and ESP SAs using 32 bit long keys
+
+ip netns exec h1 ip xfrm state add src 10.10.10.1 dst 10.0.0.1 proto esp spi ${SPI1} reqid ${Rid1} mode transport auth sha256 ${K1} enc aes ${K2}
+ip netns exec h1 ip xfrm state add src 10.0.0.1 dst 10.10.10.1 proto esp spi ${SPI2} reqid ${Rid2} mode transport auth sha256 ${K3} enc aes ${K4}
+
+ip netns exec h2 ip xfrm state add src 10.10.10.1 dst 10.0.0.1 proto esp spi ${SPI1} reqid ${Rid1} mode transport auth sha256 ${K1} enc aes ${K2}
+ip netns exec h2 ip xfrm state add src 10.0.0.1 dst 10.10.10.1 proto esp spi ${SPI2} reqid ${Rid2} mode transport auth sha256 ${K3} enc aes ${K4}
+
+# Security policies
+ip netns exec h2 ip xfrm policy add src 10.10.10.1 dst 10.0.0.1 dir in tmpl src 10.10.10.1 dst 10.0.0.1 proto esp reqid ${Rid1} mode transport
+ip netns exec h2 ip xfrm policy add src 10.0.0.1 dst 10.10.10.1 dir out tmpl src 10.0.0.1 dst 10.10.10.1 proto esp reqid ${Rid2} mode transport
+
+ip netns exec h1 ip xfrm policy add src 10.10.10.1 dst 10.0.0.1 dir out tmpl src 10.10.10.1 dst 10.0.0.1 proto esp reqid ${Rid1} mode transport
+ip netns exec h1 ip xfrm policy add src 10.0.0.1 dst 10.10.10.1 dir in tmpl src 10.0.0.1 dst 10.10.10.1 proto esp reqid ${Rid2} mode transport
