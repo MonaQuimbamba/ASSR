@@ -1,0 +1,45 @@
+#!/bin/bash
+
+rm -rf /etc/netns
+
+# create the folders 
+
+mkdir -p /etc/netns/h1/swanctl/x509ca
+mkdir -p /etc/netns/h1/swanctl/x509
+mkdir -p /etc/netns/h1/swanctl/private
+
+mkdir -p /etc/netns/h2/swanctl/x509ca
+mkdir -p /etc/netns/h2/swanctl/x509
+mkdir -p /etc/netns/h2/swanctl/private
+
+
+mkdir -p /etc/netns/r1/swanctl/x509ca
+mkdir -p /etc/netns/r1/swanctl/x509
+mkdir -p /etc/netns/r1/swanctl/private
+
+
+mkdir -p /etc/netns/r2/swanctl/x509ca
+mkdir -p /etc/netns/r2/swanctl/x509
+mkdir -p /etc/netns/r2/swanctl/private
+
+# copy the ca certificat 
+cp pki/cacerts/ca-cert.pem  /etc/netns/h1/swanctl/x509ca/
+cp pki/cacerts/ca-cert.pem  /etc/netns/h2/swanctl/x509ca/
+
+cp pki/cacerts/ca-cert.pem  /etc/netns/r1/swanctl/x509ca/
+cp pki/cacerts/ca-cert.pem  /etc/netns/r2/swanctl/x509ca/
+
+# copy the secrets keys 
+cp pki/private/h1Key.pem  /etc/netns/h1/swanctl/private
+cp pki/private/h2Key.pem  /etc/netns/h2/swanctl/private
+
+cp pki/private/r1Key.pem  /etc/netns/r1/swanctl/private
+cp pki/private/r2Key.pem  /etc/netns/r2/swanctl/private
+
+# copy the certificates to the good place 
+
+cp pki/certs/h1.pem /etc/netns/h1/swanctl/x509
+cp pki/certs/h2.pem /etc/netns/h2/swanctl/x509
+
+cp pki/certs/r1.pem /etc/netns/r1/swanctl/x509
+cp pki/certs/r2.pem /etc/netns/r2/swanctl/x509

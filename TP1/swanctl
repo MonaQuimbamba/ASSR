@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# for h1  and r1 
+cp h1/swanctl.conf /etc/netns/h1/swanctl/
+cp r1/swanctl.conf /etc/netns/r1/swanctl/
+# for h2 and r2
+
+cp h2/swanctl.conf /etc/netns/h2/swanctl/
+cp r2/swanctl.conf /etc/netns/r2/swanctl/
+# clean 
+#sudo  ip netns exec h1 rm -r  /tmp/h1
+#sudo  ip netns exec h2 rm -r  /tmp/h2
+
+# h1 
+#sudo  ip netns exec h1 killall charon 
+#sudo  ip netns exec h1 killall starter
+#sudo  ip netns exec h1 mkdir /tmp/h1
+#sudo  ip netns exec h1 mount --bin /tmp/h1 /run 
+#sudo  ip netns exec h1 ipsec start 
+#sudo  ip netns exec h1 swanctl --load-creds
+#sudo  ip netns exec h1 swanctl --load-conns
+# h2 
+#sudo  ip netns exec h2 mkdir /tmp/h2
+#sudo  ip netns exec h2 mount --bin /tmp/h2 /run 
+#sudo  ip netns exec h2 ipsec start 
+#sudo  ip netns exec h2 swanctl --load-creds
+#sudo  ip netns exec h2 swanctl --load-conns

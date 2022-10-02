@@ -142,3 +142,143 @@ IPsec tunnel mode is used between two dedicated routers, with each router acting
 In transport mode, the payload of each packet is encrypted, but the original IP header is not. Intermediary routers are thus able to view the final destination of each packet — unless a separate tunneling protocol (such as GRE) is used.
 
 # Using  IKE  with StrongSwan
+
+What's IKE 
+
+ is a VPN encryption protocol . It secures the traffic by establishing and handling the SA (Security Association) attribute within IPSec. It creates a secure tunnel between the VPN client and VPN server by authenticating both the client and the server by choosing which encryption method will be used.
+
+Although  **StrongSawn** it is an open source IPsec VPN solution that implement the key exchange protocols.
+
+First of all  we need to install this all tools:
+
+```
+sudo apt install strongswan strongswan-pki libcharon-extra-plugins \
+libcharon-extauth-plugins strongswan-swanctl charon-systemd
+```
+
+## step 1 
+
+let's set up two **pki** on **h1** and on **h2** to generate the certificats so that **StrongSwan** has the advantage to have a little **pki** that we can use to create the certificats.
+
+create the **pki** using these commands lines 
+
+```
+$ mkdir -p pki/{cacerts,certs,private}
+$ pki --gen --type rsa --size 4096 --outform pem > pki/private/ca-key.pem
+$ pki --self --ca --lifetime 3650 --in pki/private/ca-key.pem \
+--type rsa --dn "CN=VPN root CA" --outform pem > pki/cacerts/ca-cert.pem
+```
+
+The first line will create the repositoris (cacerts,certs and private) on  **pki** folder , however the option **ca-key.pem** will create a RSA key and the one with **ca-cert.pem** a certificat that belong to the **CA**.
+
+Next we're goin to copy the **CA** certificat on these folders
+
+```
+cp pki/cacerts/ca-cert.pem  /etc/netns/h1/swanctl/x509ca/
+cp pki/cacerts/ca-cert.pem  /etc/netns/h2/swanctl/x509ca/
+```
+
+Once the **PKI** is working we can use it to generate the certificats but first
+lets create the secr3t key for **h1**
+
+```
+pki --gen --type rsa --size 4096 --outform pem > pki/private/h1Key.pem
+```
+
+And put it on 
+
+```
+cp pki/private/h1Key.pem  /etc/netns/h1/swanctl/private
+```
+
+furthermore we need to create the certificats for each host **h1 et h2**
+
+ ```
+ pki --pub --in pki/private/h1Key.pem --type rsa | pki --issue \
+--cacert pki/cacerts/ca-cert.pem --cakey pki/private/ca-key.pem \
+--lifetime 1825 --dn "CN=10.10.10.1" --san 10.10.10.1 \
+--san @10.10.10.1 --outform pem > pki/certs/h1.pem
+ ```
+
+ and put it on 
+
+ 
+ ```cp pki/certs/h1.pem /etc/netns/h1/swanctl/x509
+ ```
+
+
+At the end the architecture will be like that :
+
+
+![alt text](treeEtc.png "etc conf")
+
+
+ ## step 2  configurate the two side of tunnel host-to-host with IKE 
+
+
+first of all we need to create swanctl.conf for both sides (h1 and h2) with this content (for h1 )
+
+```
+connections {
+    host-host {
+        remote_addrs = 10.0.0.1
+        local {
+            auth=pubkey
+            certs=h1.pem
+        }
+        remote {
+            auth= pubkey
+            id= "CN=10.0.0.1"
+        }
+        children {
+            net-net {
+                start_action =trap 
+            }
+        }
+    }
+}
+```
+and place it on 
+```
+cp swanctl.conf /etc/netns/h1/swanctl/
+```
+
+after that we can build the tunnel as we are using the **netns** , we'll do that :
+
+```
+$ sudo ip netns exec h1 bash
+$ sudo killall charon
+$ sudo killall starter
+$ sudo mkdir /tmp/h1
+$ sudo mount --bin /tmp/h1 /run
+$ sudo ipsec start
+$ swanctl --load-creds
+$ swanctl --load-conn
+```
+
+the command **swanctl --load-creds** allows to load the certificates 
+the command **swanctl --load-cons** aloows to start the connexion 
+
+
+
+## Step 3  set up the IPSec tunnel  between the two hosts (h1 and h2)
+The tunnel will be set up between **r1 and r2** then to start we need to create the **RSA key** and the certificats for both.
+
+Create the secr3t RSA key 
+
+```
+pki --gen --type rsa --size 4096 --outform pem > pki/private/r1Key.pem
+```
+Create the certificate 
+
+```
+pki --pub --in pki/private/r1Key.pem --type rsa | pki --issue --cacert pki/cacerts/ca-cert.pem --cakey pki/private/ca-key.pem --lifetime 1825 --dn "CN=172.16.1.1"   --san 172.16.1.1   --san @172.16.1.1   --outform pem > pki/certs/r1.pem
+```
+
+# Configuration Road Warrior
+
+
+
+# References 
+
+* https://github.com/strongswan/strongswan

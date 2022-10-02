@@ -1,5 +1,26 @@
 #!/bin/bash
 
+mkdir pki
 mkdir -p pki/{cacerts,certs,private}
+# create the rsa key for the CA 
 pki --gen --type rsa --size 4096 --outform pem > pki/private/ca-key.pem
+# create the certificate for the CA 
 pki --self --ca --lifetime 3650 --in pki/private/ca-key.pem --type rsa --dn "CN=VPN root CA" --outform pem > pki/cacerts/ca-cert.pem
+
+# create the secrets keys for h1 and h2  
+pki --gen --type rsa --size 4096 --outform pem > pki/private/h1Key.pem
+pki --gen --type rsa --size 4096 --outform pem > pki/private/h2Key.pem
+
+# create the certificates for h1 and h2 
+pki --pub --in pki/private/h1Key.pem --type rsa | pki --issue --cacert pki/cacerts/ca-cert.pem --cakey pki/private/ca-key.pem --lifetime 1825 --dn "CN=10.10.10.1" --san 10.10.10.1 --san @10.10.10.1 --outform pem > pki/certs/h1.pem
+pki --pub --in pki/private/h2Key.pem --type rsa | pki --issue --cacert pki/cacerts/ca-cert.pem --cakey pki/private/ca-key.pem --lifetime 1825 --dn "CN=10.0.0.1"   --san 10.0.0.1   --san @10.0.0.1   --outform pem > pki/certs/h2.pem
+
+
+# create the secrets keys for r1 and r2
+pki --gen --type rsa --size 4096 --outform pem > pki/private/r1Key.pem
+pki --gen --type rsa --size 4096 --outform pem > pki/private/r2Key.pem
+
+# create the certificats for r1 and r2 
+pki --pub --in pki/private/r1Key.pem --type rsa | pki --issue --cacert pki/cacerts/ca-cert.pem --cakey pki/private/ca-key.pem --lifetime 1825 --dn "CN=172.16.1.1"   --san 172.16.1.1   --san @172.16.1.1   --outform pem > pki/certs/r1.pem
+pki --pub --in pki/private/r2Key.pem --type rsa | pki --issue --cacert pki/cacerts/ca-cert.pem --cakey pki/private/ca-key.pem --lifetime 1825 --dn "CN=172.16.1.2"   --san 172.16.1.2   --san @172.16.1.2   --outform pem > pki/certs/r2.pem
+
